@@ -1,2 +1,340 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <windows.h>
+
+// this experiment is to demonstrate:
+// (1) the power pointer, return multiple values from one function
+// (2) to find twins in one set of cards
+
+// ----- constants kept same as the previous game ----- //
+// constants describing the card
+#define ALL_CARDS    52     // number of all different card
+#define CARD_NUM     13     // number of faces
+#define CARD_INFO    2      // each card is described by int [2]
+#define FACE         0      // the subscript of face for each card[]
+#define SUIT         1      // the subscript of suit for each card[]
+
+// constants describing the player and game
+#define DRAW_NUM     14     // number of cards for each player
+
+enum SUIT_NAME { DIAMOND = 1, CLUB,  HEART, SPATE };
+
+// ----- functions kept same as the previous game ----- //
+// game functions, draw, sort and play
+void drawCards( int allCards[], const int allSize, int drawCards[][CARD_INFO], const int drawSize );
+void sortCards( int cards[][CARD_INFO], const int size );
+
+// functions to display the cards
+void displayPlayerCards( char playerName, int cards[][CARD_INFO], const int size );
+void displayOneCard( int face, int suit );
+
+// ----- new or updated functions in this game ----- //
+int  getMinPair(int cards[][CARD_INFO], int* const foundCardSeq, int* const foundCardNum,
+                const int cardSize);
+int  getBiggerPair( int cards[][CARD_INFO], int targetFace, int* const foundCardSeq, int* const foundCardNum,
+                    const int cardSize );
+int  playCards( int cards[][CARD_INFO], const int* const playSeq, const int playNum,
+                const int cardSize);
+void displayPlayResult( char playerName, int cards[][CARD_INFO], const int* const playSeq, const int playNum,
+                        const int cardSize );
+
+
+int main()
+{
+    printf("Poker Game version 4:\n");
+
+    // reset the array for each game
+    int allCards [ALL_CARDS] = {0};
+    int playerA[DRAW_NUM][CARD_INFO] = {0};
+    int playerB[DRAW_NUM][CARD_INFO] = {0};
+
+    // draw random cards to the two players
+    srand(time(NULL));
+    drawCards( allCards, ALL_CARDS, playerA, DRAW_NUM );
+    sortCards( playerA, DRAW_NUM );
+    drawCards( allCards, ALL_CARDS, playerB, DRAW_NUM );
+    sortCards( playerB, DRAW_NUM );
+
+    // array to store the card seq to play
+    int playSeqA[DRAW_NUM] = {0};
+    int playSeqB[DRAW_NUM] = {0};
+
+    int playNumA = 0;
+    int playNumB = 0;
+    int targetFace = 0;
+
+    int round = 0;
+    for ( round = 1 ; round < DRAW_NUM / 2 ; round ++ )
+    {
+        printf("\nRound %2d\n", round );
+        playNumA = 2;
+        playNumB = 2;
+
+        // Player A select one set of twins to play
+        if ( getMinPair( playerA, playSeqA, &playNumA, DRAW_NUM ) == 0 )
+        {
+            printf("Cannot find one twins from play A, game is over.\n\n");
+            // cannot find a set of twins in current A, game terminates
+            break;
+        }
+        targetFace = playerA[ playSeqA[0] ][FACE];//playSeqA  records the number in playerA ,initial
+        // Player B find a bigger set of twins to response
+        getBiggerPair( playerB, targetFace, playSeqB, &playNumB, DRAW_NUM );
+
+        displayPlayerCards( 'A', playerA, DRAW_NUM );
+        displayPlayResult ( 'A', playerA, playSeqA, playNumA, DRAW_NUM );
+        displayPlayerCards( 'B', playerB, DRAW_NUM );
+        displayPlayResult ( 'B', playerB, playSeqB, playNumB, DRAW_NUM );
+
+        playCards( playerA, playSeqA, playNumA, DRAW_NUM );
+        playCards( playerB, playSeqB, playNumB, DRAW_NUM );
+
+    } // end of for loop
+
+    return 0;
+}
+
+
+// ----- functions kept same as the previous game ----- //
+
+void drawCards( int allCards[], const int allSize, int drawCard[][CARD_INFO], const int drawSize )
+{
+    int i,temp;
+    for ( i = 0; i < drawSize; i++ )
+    {
+        temp = rand()%allSize;//ranging from 0 to 51
+        //printf("@@%d\t", temp );
+        if (allCards[ temp ] == 0 )
+            //it is still available.
+        {
+            drawCard[ i ][ FACE ] = temp % 13 + 1;
+            drawCard[ i ][ SUIT ] = temp / 13 + 1;
+            allCards[ temp ] = 1;
+            //printf("%d\t&%d\t",drawCard[ i ][ 0 ],drawCard[ i ][ 1 ]);
+        }
+        else
+        {
+            i--;
+        }
+    }
+    printf("\n");
+    // -------------------------------
+    // please complete the code here
+    // -------------------------------
+
+    return ;
+}
+
+void sortCards( int cards[][CARD_INFO], const int size )
+{
+    int i,j,isSwapped, temp1, temp2;
+    for ( i = 1; i < size; i++ )
+    {
+        isSwapped = 0;
+        for( j = 0; j < size -i; j++ )
+        {
+            if ( cards[j][FACE] > cards[j + 1][FACE])
+            {
+                temp1 = cards[j][FACE];
+                cards[j][FACE] = cards[j + 1][FACE];
+                cards[j + 1][FACE] = temp1;
+
+                temp2 = cards[j][SUIT];
+                cards[j][SUIT] = cards[j + 1][SUIT];
+                cards[j + 1][SUIT] = temp2;
+
+                isSwapped ++;
+            }//end if
+        }//end internal for
+
+        if ( isSwapped == 0 )
+        {
+            break;
+        }
+    }//end external for
+    return ;
+}
+void displayPlayerCards(char playerName, int cards[][CARD_INFO], const int size)
+{
+    //playCards( playerA, playSeqA, playNumA, DRAW_NUM );
+
+    int i;
+
+    printf("Player %c: ", playerName );
+    printf("%2s", "[");
+
+    for ( i = 0; i < size; i ++ )
+    {
+        if ( cards[i][FACE] > 0 )
+        {
+            displayOneCard( cards[i][FACE], cards[i][SUIT] );
+            printf(",");
+        }
+        else
+        {
+            printf("%2s,", " ");
+        }
+    }
+    printf("\b ]%2s"," ");
+
+    return;
+}
+
+
+void displayOneCard( int face, int suit )
+{
+    HANDLE hOut = GetStdHandle( STD_OUTPUT_HANDLE );
+    char faceChar[][3] = {"A","2","3","4","5","6","7","8","9","10","J","Q","K"};
+
+    if ( suit == 1 )
+    {
+        SetConsoleTextAttribute( hOut,0x0004 | FOREGROUND_INTENSITY );
+    }
+    if ( suit == 2 )
+    {
+        SetConsoleTextAttribute( hOut,0x0006 | FOREGROUND_INTENSITY );
+    }
+    if ( suit == 3 )
+    {
+        SetConsoleTextAttribute( hOut,0x0001 | FOREGROUND_INTENSITY );
+    }
+    if ( suit == 4 )
+    {
+        SetConsoleTextAttribute( hOut,0x0002 | FOREGROUND_INTENSITY );
+    }
+
+    printf( "%2s", faceChar[ face-1 ] );
+    suit = 0;
+    face = 0;
+    SetConsoleTextAttribute( hOut,0x0007 );
+    // -------------------------------
+    // please complete the code here
+    // -------------------------------
+
+    return ;
+}
+
+
+// ----- new or updated functions in this game ----- //
+
+int  getMinPair(int cards[][CARD_INFO], int* const foundCardSeq, int* const foundCardNum,
+                const int cardSize)//int* const means the pointer can only point to one variable.
+{
+    //getMinPair( playerA, playSeqA, &playNumA(an address or pointer), DRAW_NUM 14) == 0 //playSeqA is an array while playNumA is integer
+    // -------------------------------
+    // please complete the code here
+    // -------------------------------
+    int isFound = 0;
+    int i;
+    *foundCardNum = 0;
+
+    // if not found,set every element as -1
+    for ( i = 0; i < cardSize - 1; i++ )
+    {
+        foundCardSeq[i] = -1;
+    }
+
+    for( i = 0; i < cardSize; i++ )
+    {
+        if ( cards[i][FACE] == cards[i+1][FACE] && cards[i][FACE] != 0 )
+        {
+            *foundCardNum = 2;
+            isFound = 1;
+            *foundCardSeq = i;
+            *(foundCardSeq + 1) = i + 1;
+            break;
+
+        }
+    }
+
+    return isFound;
+}
+
+
+int  getBiggerPair( int cards[][CARD_INFO], int targetFace, int* const foundCardSeq, int* const foundCardNum,
+                    const int cardSize )
+{
+    //getBiggerPair( playerB(2_DIMENSION), targetFace(K), playSeqB(1_DIMENSION), &playNumB(ADRESS), DRAW_NUM(14) )
+    // -------------------------------
+    // please complete the code here
+    // -------------------------------
+    int isFound = 0;
+    int i;
+    *foundCardNum = 0;
+
+    // if not found,set every element as -1
+    for ( i = 0; i < cardSize - 1; i++ )
+    {
+        foundCardSeq[i] = -1;
+    }
+    for( i = 0; i < cardSize - 1; i++ )//search for a bigger face
+    {
+        if ( cards[ i ][0] > targetFace && cards[ i ][0] == cards[ i + 1 ][0] )
+        {
+            *foundCardNum = 2;
+            isFound = 1;
+            *foundCardSeq = i;
+            *(foundCardSeq + 1) = i + 1;
+            break;
+        }
+    }
+
+    return isFound;
+}
+
+
+int  playCards( int cards[][CARD_INFO], const int* const playSeq, const int playNum,
+                const int cardSize)
+{
+
+    // -------------------------------
+    // please complete the code here
+    // -------------------------------
+    //playCards( playerA(2D), playSeqA(1D), playNumA, DRAW_NUM );
+
+    int isSuccessful = 0;
+    if ( playNum == 2 )
+    {
+        //printf("%d^^^^^^^^^^^",playSeq[0]);
+        cards[ playSeq[0] ][FACE] = 0;
+        cards[ playSeq[0] ][SUIT] = 0;
+        cards[ playSeq[0] + 1 ][FACE] = 0;
+        cards[ playSeq[0] + 1 ][SUIT] = 0;
+    }
+
+
+    return isSuccessful;
+}
+
+
+void displayPlayResult( char playerName, int cards[][CARD_INFO], const int* const playSeq, const int playNum,
+                        const int cardSize )
+{
+    //displayPlayResult ( 'B', playerB, playSeqB, playNumB, DRAW_NUM );
+
+    // -------------------------------
+    // please complete the code here
+    // -------------------------------
+
+    printf("Player %c:  ",playerName );
+    if ( playNum == 0 )
+    {
+        printf("-\n");
+    }
+    if ( playNum == 2)
+    {
+        printf("[");
+        displayOneCard( cards[ playSeq [0] ][0], cards[ playSeq [0] ][1]);
+        printf(",");
+        displayOneCard( cards[ playSeq [0] + 1 ][0], cards[ playSeq [0] + 1 ][1]);
+        printf(" ]\n");
+    }
+
+    return ;
+}
+
+
