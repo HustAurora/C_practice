@@ -1,0 +1,68 @@
+#include <stdio.h>
+#include <stdlib.h>
+//冒泡排序
+//选择排序
+//插入排序
+//快速排序
+//归并排序
+//堆排序
+//希尔排序
+//基数排序
+//桶排序
+///本代码中实现了希尔排序
+void display_array( int a[], int n );
+void shell_sort( int a[], int n );
+
+int main()
+{
+    int a[8] = { 80, 30, 60, 40, 20, 10, 50, 70 };
+    display_array( a, 8 );
+    shell_sort( a, 8 );
+    display_array( a, 8 );
+
+    return 0;
+}
+void display_array( int a[], int n )
+{
+    int i;
+    for( i = 0; i < n; i++ )
+    {
+        printf("%d ", a[i] );
+    }
+    printf("\n");
+}
+void shell_sort( int a[], int n )
+{
+    int i, j, gap;
+    //gap是步长，每次减为原来的一半
+    for ( gap = n / 2; gap > 0; gap /= 2 )
+    {
+        //实现每一组的排序，与插入排序基本一致
+        for ( i = 0; i < gap; i ++ )
+        {
+            //与插入排序唯一的不同在于，把1换成了gap
+            for ( j = i + gap; j < n; j += gap )
+            {
+                if ( a[j] < a[j - gap] )
+                {
+                    int tmp = a[j];
+                    int k = j - gap;
+
+                    while( k >= 0 && a[k] > tmp )
+                    {
+                        a[ k + gap ] = a[ k ];
+                        k -= gap;
+                    }
+                    a[k + gap] = tmp;
+                }
+            }//end of inner loop
+        }//end of middle loop
+    }//end of outer loop
+}
+
+
+
+
+
+
+
